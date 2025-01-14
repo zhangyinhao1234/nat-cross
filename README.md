@@ -44,7 +44,7 @@ Token Cons Is Gone : [连接已经被占满]
 ```
 
 # 文件下载
-* rrr
+* https://github.com/zhangyinhao1234/nat-cross/releases/tag/v1.0.0
 
 # 免费使用
 * 个人服务器2025年2月10号到期,到时候服务会停用
