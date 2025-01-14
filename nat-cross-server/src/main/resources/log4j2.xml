@@ -1,0 +1,30 @@
+<configuration monitorInterval="5">
+    <Properties>
+        <property name="logPath">logs/nat-cross-server</property>
+        <property name="ConsolePATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger : %m%n</property>
+        <property name="PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger : %m%n</property>
+    </Properties>
+    <appenders>
+        <console name="Console" target="SYSTEM_OUT">
+            <PatternLayout>
+                <pattern>${ConsolePATTERN}</pattern>
+            </PatternLayout>
+        </console>
+        <RollingRandomAccessFile name="FileLog" fileName="${logPath}/info.log" filePattern="${logPath}/info-%d{yyyy-MM-dd-HH}.log">
+            <PatternLayout>
+                <pattern>${PATTERN}</pattern>
+            </PatternLayout>
+            <DefaultRolloverStrategy max="10"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+        </RollingRandomAccessFile>
+    </appenders>
+
+    <loggers>
+        <Root level="INFO" includeLocation="true">
+            <appenderref ref="Console"/>
+            <appenderref ref="FileLog"/>
+        </Root>
+    </loggers>
+</configuration>
