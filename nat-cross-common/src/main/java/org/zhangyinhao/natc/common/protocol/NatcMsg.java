@@ -74,24 +74,25 @@ public class NatcMsg {
         return create(NatcActionEnums.HEARTBEAT, null, null);
     }
 
-    public static NatcMsg heartbeat() {
-        return createResponse(NatcActionEnums.HEARTBEAT, new NatcMsgResponse(true, null));
-    }
 
-    public static NatcMsg registerReq(int openPort,String protocol, String token) {
-        return createRequest(NatcActionEnums.REGISTER, new NatcMsgRequest(openPort, protocol,token));
+    public static NatcMsg registerReq(int openPort, String protocol, String token) {
+        return createRequest(NatcActionEnums.REGISTER, new NatcMsgRequest(openPort, protocol, token));
     }
 
     public static NatcMsg registerSuccess() {
-        return createResponse(NatcActionEnums.CONNECT, new NatcMsgResponse(true,  null));
+        return createResponse(NatcActionEnums.CONNECT, new NatcMsgResponse(true, null));
     }
 
     public static NatcMsg connectSuccess() {
-        return createResponse(NatcActionEnums.CONNECT, new NatcMsgResponse(true,  null));
+        return createResponse(NatcActionEnums.CONNECT, new NatcMsgResponse(true, null));
     }
 
     public static NatcMsg error(String msg) {
-        return createResponse(NatcActionEnums.ERROR, new NatcMsgResponse(false,  msg));
+        return createResponse(NatcActionEnums.ERROR, new NatcMsgResponse(false, msg));
+    }
+
+    public static NatcMsg disconnect() {
+        return create(NatcActionEnums.DISCONNECT, null, null);
     }
 
 

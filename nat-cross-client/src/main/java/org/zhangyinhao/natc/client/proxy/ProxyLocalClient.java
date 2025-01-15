@@ -11,6 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.zhangyinhao.natc.client.cache.ClientParams;
 import org.zhangyinhao.natc.client.handler.NatcClientHandler;
 import org.zhangyinhao.natc.client.handler.NatcLocalProxyHandler;
+import org.zhangyinhao.natc.common.codec.NatcMsgFrameDecoder;
+import org.zhangyinhao.natc.common.codec.NatcMsgFrameEncoder;
+
 /**
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -44,7 +47,9 @@ public class ProxyLocalClient {
                 .handler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel ch) throws Exception {
-                        ch.pipeline().addLast(new ByteArrayDecoder(), new ByteArrayEncoder())
+                        ch.pipeline().addLast(
+                                new ByteArrayDecoder(),
+                                        new ByteArrayEncoder())
                                 .addLast("proxyHandler", new NatcLocalProxyHandler(clientHandler));
                     }
                 });
@@ -53,7 +58,7 @@ public class ProxyLocalClient {
 
     public void start() throws InterruptedException {
         ChannelFuture channelFuture = bootstrap.connect(connect.getLocalProxyAddr(), connect.getLocalProxyPort()).sync();
-        log.info("ProxyClient Connect Success,LocalProxyAddr : {}, LocalProxyPort : {}", connect.getLocalProxyAddr(), connect.getLocalProxyPort());
+        //log.info("ProxyClient Connect Success,LocalProxyAddr : {}, LocalProxyPort : {}", connect.getLocalProxyAddr(), connect.getLocalProxyPort());
         channelFuture.channel().closeFuture().addListener(future -> {
             stop();
         });

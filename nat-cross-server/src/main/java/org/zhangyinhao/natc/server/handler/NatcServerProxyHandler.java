@@ -44,4 +44,8 @@ public abstract class NatcServerProxyHandler extends ChannelInboundHandlerAdapte
     }
 
     public abstract void writeAndFlush(byte[] data);
+
+    public void close() {
+        proxyCtx.close();
+    }
 }

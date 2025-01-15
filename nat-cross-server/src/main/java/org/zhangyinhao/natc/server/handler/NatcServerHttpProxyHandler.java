@@ -1,5 +1,7 @@
 package org.zhangyinhao.natc.server.handler;
 
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
 import lombok.extern.slf4j.Slf4j;
 /**
  *    Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,6 +26,6 @@ public class NatcServerHttpProxyHandler extends NatcServerProxyHandler {
     @Override
     public void writeAndFlush(byte[] data) {
         proxyCtx.writeAndFlush(data);
-        proxyCtx.close();
     }
+
 }

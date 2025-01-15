@@ -29,7 +29,6 @@ public class NatcServerDispatchHandler extends SimpleChannelInboundHandler<NatcM
 
     private ChannelHandlerContext crossCtx;
 
-
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, NatcMsg natcMsg) throws Exception {
         log.debug("Action Val Is : {}", natcMsg.getAction());
@@ -42,6 +41,10 @@ public class NatcServerDispatchHandler extends SimpleChannelInboundHandler<NatcM
                 break;
             case HEARTBEAT:
                 break;
+            case DISCONNECT:
+                disconnect();
+                break;
+
         }
     }
 
@@ -79,6 +82,10 @@ public class NatcServerDispatchHandler extends SimpleChannelInboundHandler<NatcM
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         this.crossCtx = ctx;
         super.channelActive(ctx);
+    }
+
+    private void disconnect() {
+        proxyHandler.close();
     }
 
     @Override

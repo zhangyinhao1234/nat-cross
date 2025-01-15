@@ -51,5 +51,3 @@ Token Cons Is Gone : [连接已经被占满]
 * 使用下载的客户端,修改 conf 中的配置文件,在本地启动 nat-cross-client.jar 
 * 免费的服务设置了最大连接数200个,服务器代理服务开放的端口是[35000~36000],如果发现线路繁忙无法连接请联系我,提供单独的Token zhangyinhao1234@163.com
 
-# 捐赠
-![wechat.jpeg](images%2Fwechat.jpeg)

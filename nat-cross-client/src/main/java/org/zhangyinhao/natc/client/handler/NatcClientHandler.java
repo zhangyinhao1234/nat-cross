@@ -6,6 +6,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.zhangyinhao.natc.client.cache.ClientParams;
 import org.zhangyinhao.natc.client.proxy.ProxyLocalClient;
 import org.zhangyinhao.natc.common.protocol.NatcMsg;
+
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
 /**
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -21,6 +26,7 @@ import org.zhangyinhao.natc.common.protocol.NatcMsg;
  */
 @Slf4j
 public class NatcClientHandler extends ChannelInboundHandlerAdapter {
+    private static ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(1);
     private ProxyLocalClient proxyLocalClient;
 
     private ChannelHandlerContext clientProxyCtx;
@@ -65,6 +71,10 @@ public class NatcClientHandler extends ChannelInboundHandlerAdapter {
         super.channelRead(ctx, msg);
     }
 
+    public void writeAndFlush(NatcMsg natcMsg) {
+        clientCtx.writeAndFlush(natcMsg);
+    }
+
     private void crossData(NatcMsg natcMsg) {
         clientProxyCtx.writeAndFlush(natcMsg.getCrossData());
     }
@@ -84,6 +94,7 @@ public class NatcClientHandler extends ChannelInboundHandlerAdapter {
         proxyLocalClient = new ProxyLocalClient(this);
         try {
             proxyLocalClient.start();
+            log.info("ProxyClient Connect Success,LocalProxyAddr : {}, LocalProxyPort : {}", connect.getLocalProxyAddr(), connect.getLocalProxyPort());
             ctx.writeAndFlush(NatcMsg.connectSuccess());
         } catch (Exception e) {
             log.error("ProxyLocalClient Run Error, Close Channel", e);
@@ -98,14 +109,12 @@ public class NatcClientHandler extends ChannelInboundHandlerAdapter {
         try {
             proxyLocalClient.start();
         } catch (Exception e) {
-            log.error("RestartProxy Error", e);
+            log.error("RestartProxy Error,Try Again After 10S", e);
             proxyLocalClient.stop();
+            scheduledExecutorService.scheduleWithFixedDelay(() -> {
+                restartProxy();
+            }, 5, 5, TimeUnit.SECONDS);
         }
-    }
-
-
-    public ChannelHandlerContext getClientCtx() {
-        return clientCtx;
     }
 
     public void setClientProxyCtx(ChannelHandlerContext clientProxyCtx) {

@@ -33,6 +33,7 @@ public class NatcLocalProxyHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        clientHandler.writeAndFlush(NatcMsg.disconnect());
         super.channelInactive(ctx);
         clientHandler.restartProxy();
     }
@@ -40,6 +41,6 @@ public class NatcLocalProxyHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         byte[] data = (byte[]) msg;
-        clientHandler.getClientCtx().writeAndFlush(NatcMsg.createCrossData(data));
+        clientHandler.writeAndFlush(NatcMsg.createCrossData(data));
     }
 }
