@@ -35,7 +35,7 @@ java -jar nat-cross-client.jar
 ```
 启动成功后,会看到如下输出:
 ```
-ProxyClient Connect Success,LocalProxyAddr : 127.0.0.1, LocalProxyPort : 8080
+Register Success, ServerProxyPort : 38080 
 ```
 
 其他启动错误:
