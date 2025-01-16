@@ -19,9 +19,25 @@ public class NatcMsgRequest {
      */
     private String token;
 
+
+
+    private String channelId;
+
     public NatcMsgRequest(int openPort, String protocol, String token) {
         this.openPort = openPort;
         this.protocol = protocol;
         this.token = token;
+    }
+
+
+    public NatcMsgRequest(int openPort, String protocol, String token, String channelId) {
+        this.openPort = openPort;
+        this.protocol = protocol;
+        this.token = token;
+        this.channelId = channelId;
+    }
+
+    public NatcMsgRequest(String channelId) {
+        this.channelId = channelId;
     }
 }

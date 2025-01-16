@@ -1,14 +1,7 @@
 package org.zhangyinhao.natc.server;
 
-import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.logging.LoggingHandler;
-import io.netty.util.concurrent.DefaultThreadFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.zhangyinhao.natc.common.codec.NatcMsgFrameDecoder;
 import org.zhangyinhao.natc.common.codec.NatcMsgFrameEncoder;
@@ -18,6 +11,7 @@ import org.zhangyinhao.natc.server.cache.ServerParams;
 import org.zhangyinhao.natc.server.handler.AuthHandler;
 import org.zhangyinhao.natc.server.handler.NatcServerDispatchHandler;
 import org.zhangyinhao.natc.server.handler.NatcServerIdleCheckHandler;
+import org.zhangyinhao.natc.server.net.*;
 /**
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -33,55 +27,23 @@ import org.zhangyinhao.natc.server.handler.NatcServerIdleCheckHandler;
  */
 @Slf4j
 public class NactServer {
+    public void start() throws InterruptedException {
+        TcpServer server = new TcpServer();
+        server.bind(ServerParams.port, new ChannelInitializer<SocketChannel>() {
+            @Override
+            public void initChannel(SocketChannel ch) throws Exception {
+                ch.pipeline()
+                        .addLast("idleCheck", new NatcServerIdleCheckHandler())
+                        .addLast("frameDecoder", new NatcMsgFrameDecoder())
+                        .addLast("frameEncoder", new NatcMsgFrameEncoder())
+                        .addLast("msgProtocolEncoder", new NatcMsgProtocolEncoder())
+                        .addLast("msgProtocolDecoder", new NatcMsgProtocolDecoder())
+                        .addLast("authHandler", new AuthHandler())
 
-    private ServerBootstrap serverBootstrap;
+                        .addLast("dispatchHandler", new NatcServerDispatchHandler());
 
-    private NioEventLoopGroup boss = new NioEventLoopGroup(1, new DefaultThreadFactory("boss-group"));
-    private NioEventLoopGroup worker = new NioEventLoopGroup(2, new DefaultThreadFactory("worker-group"));
-
-
-    public NactServer() {
-        serverBootstrap = new ServerBootstrap();
-        try {
-            serverBootstrap.group(boss, worker)
-                    .channel(NioServerSocketChannel.class)
-                    .option(ChannelOption.SO_BACKLOG, 100)
-                    .handler(new LoggingHandler())
-                    .childHandler(new ChannelInitializer<SocketChannel>() {
-                        @Override
-                        protected void initChannel(SocketChannel socketChannel) throws Exception {
-                            socketChannel.pipeline()
-                                    .addLast("idleCheck",new NatcServerIdleCheckHandler())
-                                    .addLast("frameDecoder", new NatcMsgFrameDecoder())
-                                    .addLast("frameEncoder", new NatcMsgFrameEncoder())
-                                    .addLast("msgProtocolEncoder", new NatcMsgProtocolEncoder())
-                                    .addLast("msgProtocolDecoder", new NatcMsgProtocolDecoder())
-                                    .addLast("authHandler", new AuthHandler())
-
-                                    .addLast("dispatchHandler", new NatcServerDispatchHandler());
-                        }
-                    });
-        } catch (Exception e) {
-            log.error("server init error", e);
-        }
-    }
-
-    public void start() {
-        try {
-            ChannelFuture channelFuture = serverBootstrap.bind(ServerParams.port).sync();
-            log.info("Server Start Success Port Is : {}", ServerParams.port);
-            channelFuture.channel().closeFuture().addListener(future -> {
-                stop();
-            });
-        } catch (Exception e) {
-            log.error("Server Start Error", e);
-            stop();
-        }
-
-    }
-
-    public void stop(){
-        boss.shutdownGracefully();
-        worker.shutdownGracefully();
+            }
+        });
+        log.info("Server Start Success Port Is : {}", ServerParams.port);
     }
 }

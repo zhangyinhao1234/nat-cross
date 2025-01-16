@@ -1,11 +1,19 @@
 package org.zhangyinhao.natc.server.handler;
 
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.handler.codec.bytes.ByteArrayDecoder;
+import io.netty.handler.codec.bytes.ByteArrayEncoder;
+import io.netty.util.concurrent.GlobalEventExecutor;
 import lombok.extern.slf4j.Slf4j;
 import org.zhangyinhao.natc.common.protocol.NatcMsg;
-import org.zhangyinhao.natc.server.cache.ServerToken;
-import org.zhangyinhao.natc.server.proxy.ProxyServer;
+import org.zhangyinhao.natc.common.protocol.NatcMsgRequest;
+import org.zhangyinhao.natc.common.protocol.ProtocolEnums;
+import org.zhangyinhao.natc.server.net.*;
 
 import java.net.BindException;
 
@@ -24,10 +32,9 @@ import java.net.BindException;
  */
 @Slf4j
 public class NatcServerDispatchHandler extends SimpleChannelInboundHandler<NatcMsg> {
-    private ProxyServer proxyServer = null;
-    private NatcServerProxyHandler proxyHandler;
-
-    private ChannelHandlerContext crossCtx;
+    protected ChannelHandlerContext ctx;
+    private TcpServer proxyServer = new TcpServer();
+    private static ChannelGroup channels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, NatcMsg natcMsg) throws Exception {
@@ -42,64 +49,70 @@ public class NatcServerDispatchHandler extends SimpleChannelInboundHandler<NatcM
             case HEARTBEAT:
                 break;
             case DISCONNECT:
-                disconnect();
+                disconnect(natcMsg);
                 break;
-
         }
     }
 
-    public void writeAndFlush(byte[] data) {
-        crossCtx.writeAndFlush(NatcMsg.createCrossData(data));
-    }
-
-
     private void register(ChannelHandlerContext ctx, NatcMsg natcMsg) throws InterruptedException {
+        NatcMsgRequest request = natcMsg.getRequest();
         try {
-            proxyServer = new ProxyServer(natcMsg.getRequest().getToken(), natcMsg.getRequest().getOpenPort(),
-                    natcMsg.getRequest().getProtocol(), this);
-            proxyServer.start();
-            ctx.writeAndFlush(NatcMsg.registerSuccess());
+            NatcServerDispatchHandler thisHandler = this;
+            proxyServer.bind(request.getOpenPort(), new ChannelInitializer<SocketChannel>() {
+                @Override
+                public void initChannel(SocketChannel ch) throws Exception {
+                    ch.pipeline().addLast(
+                            new ByteArrayDecoder(),
+                            new ByteArrayEncoder(),
+                            getProxyHandler(thisHandler, request.getProtocol()));
+                    channels.add(ch);
+                }
+            });
         } catch (Exception e) {
             log.error("ProxyServer Start Error", e);
-            if (proxyServer != null) {
-                proxyServer.stop();
-            }
             if (e instanceof BindException) {
                 ctx.writeAndFlush(NatcMsg.error("ProxyServer Start Error,Because The Port " + natcMsg.getRequest().getOpenPort() + " Is In Use"));
             } else {
                 ctx.writeAndFlush(NatcMsg.error("ProxyServer Start Error"));
             }
-
-            ctx.close();
         }
+    }
+    private NatcServerProxyHandler getProxyHandler(NatcServerDispatchHandler dispatchHandler,String protocol) {
+        NatcServerProxyHandler proxyHandler = null;
+        if (ProtocolEnums.http.toString().equals(protocol)) {
+            proxyHandler = new NatcServerHttpProxyHandler(dispatchHandler);
+        }
+        if (ProtocolEnums.https.toString().equals(protocol)) {
+
+        }
+        if (ProtocolEnums.tcp.toString().equals(protocol)) {
+            proxyHandler = new NatcServerTcpProxyHandler(dispatchHandler);
+        }
+        return proxyHandler;
     }
 
     private void crossData(NatcMsg natcMsg) {
-        proxyHandler.writeAndFlush(natcMsg.getCrossData());
+        String channelId = natcMsg.getRequest().getChannelId();
+        channels.writeAndFlush(natcMsg.getCrossData(), channel -> channel.id().asLongText().equals(channelId));
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        this.crossCtx = ctx;
-        super.channelActive(ctx);
+        this.ctx = ctx;
     }
 
-    private void disconnect() {
-        proxyHandler.close();
+    private void disconnect(NatcMsg natcMsg) {
+        String channelId = natcMsg.getRequest().getChannelId();
+        channels.close(channel -> channel.id().asLongText().equals(channelId));
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         log.warn("Channel Inactive, Stop Proxy Server");
-        if (proxyServer != null) {
-            ServerToken.decrementAndGet(proxyServer.getToken());
-            proxyServer.stop();
-        }
-        super.channelInactive(ctx);
+        proxyServer.close();
     }
 
-    public void setProxyHandler(NatcServerProxyHandler proxyHandler) {
-        this.proxyHandler = proxyHandler;
+    public ChannelHandlerContext getCtx() {
+        return ctx;
     }
-
 }

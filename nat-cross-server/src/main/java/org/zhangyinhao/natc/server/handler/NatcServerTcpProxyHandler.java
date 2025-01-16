@@ -21,8 +21,4 @@ public class NatcServerTcpProxyHandler extends NatcServerProxyHandler {
         super(dispatchHandler);
     }
 
-    @Override
-    public void writeAndFlush(byte[] data) {
-        proxyCtx.writeAndFlush(data);
-    }
 }

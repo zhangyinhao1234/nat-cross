@@ -17,9 +17,10 @@ import org.zhangyinhao.natc.server.load.LoadToken;
  *    limitations under the License.
  */
 public class ServerStartUp {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         new LoadProperties().load();
         new LoadToken().load();
         new NactServer().start();
+
     }
 }

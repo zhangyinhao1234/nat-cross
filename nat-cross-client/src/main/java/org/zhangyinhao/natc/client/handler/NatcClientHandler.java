@@ -2,11 +2,23 @@ package org.zhangyinhao.natc.client.handler;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.handler.codec.bytes.ByteArrayDecoder;
+import io.netty.handler.codec.bytes.ByteArrayEncoder;
+import io.netty.util.concurrent.GlobalEventExecutor;
 import lombok.extern.slf4j.Slf4j;
 import org.zhangyinhao.natc.client.cache.ClientParams;
+import org.zhangyinhao.natc.client.net.TcpConnection;
 import org.zhangyinhao.natc.client.proxy.ProxyLocalClient;
 import org.zhangyinhao.natc.common.protocol.NatcMsg;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -26,14 +38,12 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 public class NatcClientHandler extends ChannelInboundHandlerAdapter {
-    private static ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(1);
-    private ProxyLocalClient proxyLocalClient;
-
-    private ChannelHandlerContext clientProxyCtx;
-
-    private ChannelHandlerContext clientCtx;
-
     private ClientParams.Connect connect;
+    private ChannelHandlerContext ctx;
+
+    private ConcurrentHashMap<String, NatcLocalProxyHandler> channelHandlerMap = new ConcurrentHashMap<>();
+    private ChannelGroup channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+
 
     public NatcClientHandler(ClientParams.Connect connect) {
         this.connect = connect;
@@ -42,15 +52,14 @@ public class NatcClientHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         register(ctx);
-        this.clientCtx = ctx;
+        this.ctx = ctx;
         super.channelActive(ctx);
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        log.info("ClientHandler channel inactive, system exit");
-        System.exit(-1);
-        super.channelInactive(ctx);
+        channelGroup.close();
+        log.info("ClientHandler channel inactive, close channelGroup");
     }
 
     @Override
@@ -59,66 +68,79 @@ public class NatcClientHandler extends ChannelInboundHandlerAdapter {
         log.debug("client receive msg: action is : {}", natcMsg.getAction());
         switch (natcMsg.getAction()) {
             case CONNECT:
-                connect(ctx);
+                connect(ctx, natcMsg);
                 break;
             case DATA:
                 crossData(natcMsg);
                 break;
             case ERROR:
-                error(natcMsg);
+                error(ctx,natcMsg);
+                break;
+            case DISCONNECT:
+                disconnect(ctx, natcMsg);
                 break;
         }
         super.channelRead(ctx, msg);
     }
 
-    public void writeAndFlush(NatcMsg natcMsg) {
-        clientCtx.writeAndFlush(natcMsg);
-    }
-
-    private void crossData(NatcMsg natcMsg) {
-        clientProxyCtx.writeAndFlush(natcMsg.getCrossData());
-    }
-
     private void register(ChannelHandlerContext ctx) {
         log.info("Begin Register,ServerProxyPort : {}", connect.getServerProxyPort());
-        NatcMsg natcMsg = NatcMsg.registerReq(connect.getServerProxyPort(),connect.getServerProxyProtocol(), connect.getServerToken());
+        NatcMsg natcMsg = NatcMsg.registerReq(connect.getServerProxyPort(), connect.getServerProxyProtocol(), connect.getServerToken());
         ctx.writeAndFlush(natcMsg);
     }
 
-    private void error(NatcMsg natcMsg) {
+    private void connect(ChannelHandlerContext ctx, NatcMsg natcMsg) throws IOException, InterruptedException {
+        String serverProxyChannelId = natcMsg.getResponse().getChannelId();
+        try {
+            NatcClientHandler thisHandler = this;
+            TcpConnection localConnection = new TcpConnection();
+            localConnection.connect(connect.getLocalProxyAddr(), connect.getLocalProxyPort(), new ChannelInitializer<SocketChannel>() {
+                @Override
+                public void initChannel(SocketChannel ch) throws Exception {
+                    NatcLocalProxyHandler localProxyHandler = new NatcLocalProxyHandler(thisHandler, serverProxyChannelId);
+                    ch.pipeline().addLast(
+                            new ByteArrayDecoder(),
+                            new ByteArrayEncoder(),
+                            localProxyHandler);
+                    channelHandlerMap.put(serverProxyChannelId, localProxyHandler);
+                    channelGroup.add(ch);
+                }
+            });
+            log.info("Start Local Proxy Server Success ,Addr:{} Port:{}", connect.getLocalProxyAddr(), connect.getLocalProxyPort());
+        } catch (Exception e) {
+            ctx.writeAndFlush(NatcMsg.disconnect(serverProxyChannelId));
+            channelHandlerMap.remove(serverProxyChannelId);
+            throw e;
+        }
+    }
+
+    private void crossData(NatcMsg natcMsg) {
+        String channelId = natcMsg.getResponse().getChannelId();
+        NatcLocalProxyHandler handler = channelHandlerMap.get(channelId);
+        if (handler != null) {
+            ChannelHandlerContext ctx = handler.getCtx();
+            ctx.writeAndFlush(natcMsg.getCrossData());
+        }
+    }
+
+    private void disconnect(ChannelHandlerContext ctx, NatcMsg natcMsg){
+        String channelId = natcMsg.getResponse().getChannelId();
+        NatcLocalProxyHandler handler = channelHandlerMap.get(channelId);
+        if (handler != null) {
+            handler.getCtx().close();
+            channelHandlerMap.remove(channelId);
+        }
+    }
+
+
+    private void error(ChannelHandlerContext ctx,NatcMsg natcMsg) {
         log.error("Server Close Channel By : {}", natcMsg.getResponse().getRemark());
+        ctx.close();
     }
 
 
-    private void connect(ChannelHandlerContext ctx) {
-        proxyLocalClient = new ProxyLocalClient(this);
-        try {
-            proxyLocalClient.start();
-            log.info("ProxyClient Connect Success,LocalProxyAddr : {}, LocalProxyPort : {}", connect.getLocalProxyAddr(), connect.getLocalProxyPort());
-            ctx.writeAndFlush(NatcMsg.connectSuccess());
-        } catch (Exception e) {
-            log.error("ProxyLocalClient Run Error, Close Channel", e);
-            proxyLocalClient.stop();
-            ctx.writeAndFlush(NatcMsg.error("ProxyLocalClient Run Error"));
-            ctx.close();
-        }
-    }
-
-    public void restartProxy() {
-        proxyLocalClient = new ProxyLocalClient(this);
-        try {
-            proxyLocalClient.start();
-        } catch (Exception e) {
-            log.error("RestartProxy Error,Try Again After 10S", e);
-            proxyLocalClient.stop();
-            scheduledExecutorService.scheduleWithFixedDelay(() -> {
-                restartProxy();
-            }, 5, 5, TimeUnit.SECONDS);
-        }
-    }
-
-    public void setClientProxyCtx(ChannelHandlerContext clientProxyCtx) {
-        this.clientProxyCtx = clientProxyCtx;
+    public ChannelHandlerContext getCtx() {
+        return ctx;
     }
 
     public ClientParams.Connect getConnect() {

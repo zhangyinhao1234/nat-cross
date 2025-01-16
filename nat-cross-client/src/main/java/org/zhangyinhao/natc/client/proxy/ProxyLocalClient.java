@@ -43,7 +43,7 @@ public class ProxyLocalClient {
         bootstrap = new Bootstrap();
         bootstrap.group(group)
                 .channel(NioSocketChannel.class)
-                .option(ChannelOption.TCP_NODELAY, true)
+                .option(ChannelOption.SO_KEEPALIVE, true)
                 .handler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel ch) throws Exception {
@@ -60,11 +60,8 @@ public class ProxyLocalClient {
         ChannelFuture channelFuture = bootstrap.connect(connect.getLocalProxyAddr(), connect.getLocalProxyPort()).sync();
         //log.info("ProxyClient Connect Success,LocalProxyAddr : {}, LocalProxyPort : {}", connect.getLocalProxyAddr(), connect.getLocalProxyPort());
         channelFuture.channel().closeFuture().addListener(future -> {
-            stop();
+            group.shutdownGracefully();
         });
     }
 
-    public void stop() {
-        group.shutdownGracefully();
-    }
 }

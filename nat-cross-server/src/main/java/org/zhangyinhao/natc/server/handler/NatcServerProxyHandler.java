@@ -3,6 +3,10 @@ package org.zhangyinhao.natc.server.handler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import lombok.extern.slf4j.Slf4j;
+import org.zhangyinhao.natc.common.protocol.NatcMsg;
+
+import java.util.Arrays;
+
 /**
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -19,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class NatcServerProxyHandler extends ChannelInboundHandlerAdapter {
     protected NatcServerDispatchHandler dispatch;
-    protected ChannelHandlerContext proxyCtx;
+    protected ChannelHandlerContext ctx;
 
     public NatcServerProxyHandler(NatcServerDispatchHandler dispatchHandler) {
         this.dispatch = dispatchHandler;
@@ -27,25 +31,20 @@ public abstract class NatcServerProxyHandler extends ChannelInboundHandlerAdapte
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        this.proxyCtx = ctx;
-        dispatch.setProxyHandler(this);
-        super.channelActive(ctx);
+        log.info("proxy channel active");
+        this.ctx = ctx;
+        dispatch.getCtx().writeAndFlush(NatcMsg.connect(ctx.channel().id().asLongText()));
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        super.channelInactive(ctx);
+        dispatch.getCtx().writeAndFlush(NatcMsg.connect(ctx.channel().id().asLongText()));
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         byte[] data = (byte[]) msg;
-        dispatch.writeAndFlush(data);
+        dispatch.getCtx().writeAndFlush(NatcMsg.createCrossData(data, ctx.channel().id().asLongText()));
     }
 
-    public abstract void writeAndFlush(byte[] data);
-
-    public void close() {
-        proxyCtx.close();
-    }
 }

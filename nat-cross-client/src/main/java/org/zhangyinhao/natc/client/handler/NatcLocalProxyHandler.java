@@ -21,26 +21,37 @@ import org.zhangyinhao.natc.common.protocol.NatcMsg;
 public class NatcLocalProxyHandler extends ChannelInboundHandlerAdapter {
     private NatcClientHandler clientHandler;
 
+    private ChannelHandlerContext ctx;
+
+    private String serverProxyChannelId;
+
     public NatcLocalProxyHandler(NatcClientHandler clientHandler) {
         this.clientHandler = clientHandler;
     }
 
+    public NatcLocalProxyHandler(NatcClientHandler clientHandler, String serverProxyChannelId) {
+        this.clientHandler = clientHandler;
+        this.serverProxyChannelId = serverProxyChannelId;
+    }
+
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        clientHandler.setClientProxyCtx(ctx);
-        super.channelActive(ctx);
+        this.ctx = ctx;
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        clientHandler.writeAndFlush(NatcMsg.disconnect());
-        super.channelInactive(ctx);
-        clientHandler.restartProxy();
+        clientHandler.getCtx().writeAndFlush(NatcMsg.disconnect(serverProxyChannelId));
+        log.debug("ClientProxyHandler channel inactive, restart proxy");
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         byte[] data = (byte[]) msg;
-        clientHandler.writeAndFlush(NatcMsg.createCrossData(data));
+        clientHandler.getCtx().writeAndFlush(NatcMsg.createCrossData(data, serverProxyChannelId));
+    }
+
+    public ChannelHandlerContext getCtx() {
+        return ctx;
     }
 }

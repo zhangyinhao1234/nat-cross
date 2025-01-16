@@ -79,12 +79,8 @@ public class NatcMsg {
         return createRequest(NatcActionEnums.REGISTER, new NatcMsgRequest(openPort, protocol, token));
     }
 
-    public static NatcMsg registerSuccess() {
-        return createResponse(NatcActionEnums.CONNECT, new NatcMsgResponse(true, null));
-    }
-
-    public static NatcMsg connectSuccess() {
-        return createResponse(NatcActionEnums.CONNECT, new NatcMsgResponse(true, null));
+    public static NatcMsg connect(String channelId) {
+        return create(NatcActionEnums.CONNECT,null,new NatcMsgResponse(channelId));
     }
 
     public static NatcMsg error(String msg) {
@@ -95,13 +91,11 @@ public class NatcMsg {
         return create(NatcActionEnums.DISCONNECT, null, null);
     }
 
-
-    public static NatcMsg none() {
-        return create(NatcActionEnums.NONE, null, null);
+    public static NatcMsg disconnect(String channelId) {
+        return create(NatcActionEnums.DISCONNECT, new NatcMsgRequest(channelId), new NatcMsgResponse(channelId));
     }
-
-    public static NatcMsg createCrossData(byte[] crossData) {
-        NatcMsg natcMsg = create(NatcActionEnums.DATA, null, null);
+    public static NatcMsg createCrossData(byte[] crossData,String channelId) {
+        NatcMsg natcMsg = create(NatcActionEnums.DATA, new NatcMsgRequest(channelId), new NatcMsgResponse(channelId));
         natcMsg.setCrossData(crossData);
         return natcMsg;
     }
