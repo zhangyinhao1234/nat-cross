@@ -87,9 +87,10 @@ public class NatcMsg {
         return createResponse(NatcActionEnums.ERROR, new NatcMsgResponse(false, msg));
     }
 
-    public static NatcMsg disconnect() {
-        return create(NatcActionEnums.DISCONNECT, null, null);
+    public static NatcMsg registerRes(boolean success,String msg) {
+        return createResponse(NatcActionEnums.REGISTER_RESULT, new NatcMsgResponse(success, msg));
     }
+
 
     public static NatcMsg disconnect(String channelId) {
         return create(NatcActionEnums.DISCONNECT, new NatcMsgRequest(channelId), new NatcMsgResponse(channelId));

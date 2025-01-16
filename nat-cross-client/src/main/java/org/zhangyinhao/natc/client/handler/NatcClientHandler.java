@@ -12,16 +12,12 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 import lombok.extern.slf4j.Slf4j;
 import org.zhangyinhao.natc.client.cache.ClientParams;
 import org.zhangyinhao.natc.client.net.TcpConnection;
-import org.zhangyinhao.natc.client.proxy.ProxyLocalClient;
 import org.zhangyinhao.natc.common.protocol.NatcMsg;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 /**
  *    Licensed under the Apache License, Version 2.0 (the "License");
@@ -67,6 +63,9 @@ public class NatcClientHandler extends ChannelInboundHandlerAdapter {
         NatcMsg natcMsg = (NatcMsg) msg;
         log.debug("client receive msg: action is : {}", natcMsg.getAction());
         switch (natcMsg.getAction()) {
+            case REGISTER_RESULT:
+                registerResult(ctx, natcMsg);
+                break;
             case CONNECT:
                 connect(ctx, natcMsg);
                 break;
@@ -84,9 +83,17 @@ public class NatcClientHandler extends ChannelInboundHandlerAdapter {
     }
 
     private void register(ChannelHandlerContext ctx) {
-        log.info("Begin Register,ServerProxyPort : {}", connect.getServerProxyPort());
         NatcMsg natcMsg = NatcMsg.registerReq(connect.getServerProxyPort(), connect.getServerProxyProtocol(), connect.getServerToken());
         ctx.writeAndFlush(natcMsg);
+    }
+
+    private void registerResult(ChannelHandlerContext ctx, NatcMsg natcMsg) {
+        if (natcMsg.getResponse().isSuccess()) {
+            log.info("Register Success, ServerProxyPort : {} ", connect.getServerProxyPort());
+        } else {
+            log.error("Register Fail,Server Close Channel By : {}", natcMsg.getResponse().getRemark());
+            ctx.close();
+        }
     }
 
     private void connect(ChannelHandlerContext ctx, NatcMsg natcMsg) throws IOException, InterruptedException {

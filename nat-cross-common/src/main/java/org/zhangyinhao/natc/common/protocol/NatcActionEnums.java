@@ -46,7 +46,11 @@ public enum NatcActionEnums {
      * 数据
      */
     DATA(6),
-    NONE(7)
+
+    /**
+     * 注册结果
+     */
+    REGISTER_RESULT(7)
     ;
 
 

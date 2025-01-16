@@ -68,12 +68,13 @@ public class NatcServerDispatchHandler extends SimpleChannelInboundHandler<NatcM
                     channels.add(ch);
                 }
             });
+            ctx.writeAndFlush(NatcMsg.registerRes(true,"ProxyServer Start Success"));
         } catch (Exception e) {
             log.error("ProxyServer Start Error", e);
             if (e instanceof BindException) {
-                ctx.writeAndFlush(NatcMsg.error("ProxyServer Start Error,Because The Port " + natcMsg.getRequest().getOpenPort() + " Is In Use"));
+                ctx.writeAndFlush(NatcMsg.registerRes(false,"ProxyServer Start Error,Because The Port " + natcMsg.getRequest().getOpenPort() + " Is In Use"));
             } else {
-                ctx.writeAndFlush(NatcMsg.error("ProxyServer Start Error"));
+                ctx.writeAndFlush(NatcMsg.registerRes(false,"ProxyServer Start Error"));
             }
         }
     }
