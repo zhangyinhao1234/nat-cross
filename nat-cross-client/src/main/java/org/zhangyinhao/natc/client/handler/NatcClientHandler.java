@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.zhangyinhao.natc.client.cache.ClientParams;
 import org.zhangyinhao.natc.client.net.TcpConnection;
 import org.zhangyinhao.natc.common.protocol.NatcMsg;
+import org.zhangyinhao.natc.common.protocol.ProtocolEnums;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -89,7 +90,11 @@ public class NatcClientHandler extends ChannelInboundHandlerAdapter {
 
     private void registerResult(ChannelHandlerContext ctx, NatcMsg natcMsg) {
         if (natcMsg.getResponse().isSuccess()) {
-            log.info("Register Success, ServerProxyPort : {} ", connect.getServerProxyPort());
+            if (ProtocolEnums.http.toString().equals(connect.getServerProxyProtocol())) {
+                log.info("Register Success, WebSite Is http://{}:{}   ", connect.getServerAddr(), connect.getServerProxyPort());
+            } else {
+                log.info("Register Success, Use {}:{} Connect You Server ", connect.getServerAddr(), connect.getServerProxyPort());
+            }
         } else {
             log.error("Register Fail,Server Close Channel By : {}", natcMsg.getResponse().getRemark());
             ctx.close();
@@ -113,7 +118,7 @@ public class NatcClientHandler extends ChannelInboundHandlerAdapter {
                     channelGroup.add(ch);
                 }
             });
-            log.info("Start Local Proxy Server Success ,Addr:{} Port:{}", connect.getLocalProxyAddr(), connect.getLocalProxyPort());
+            //log.info("Start Local Proxy Server Success ,Addr:{} Port:{}", connect.getLocalProxyAddr(), connect.getLocalProxyPort());
         } catch (Exception e) {
             ctx.writeAndFlush(NatcMsg.disconnect(serverProxyChannelId));
             channelHandlerMap.remove(serverProxyChannelId);

@@ -33,7 +33,7 @@ Server Start Success Port Is : 10060
 ```
 java -jar nat-cross-client.jar
 ```
-启动成功后,会看到如下输出:
+启动成功后,会看到如下输出: 然后使用 {server.addr}:{server.proxy.port} 访问你的服务
 ```
 Register Success, ServerProxyPort : 38080 
 ```
@@ -48,6 +48,6 @@ Token Cons Is Gone : [连接已经被占满]
 
 # 免费使用
 * 个人服务器2025年2月10号到期,到时候服务会停用
-* 使用下载的客户端,修改 conf 中的配置文件,在本地启动 nat-cross-client.jar 
+* 使用下载的客户端,修改 conf 中的配置文件,在本地启动 nat-cross-client.jar ;使用 124.222.52.154:{server.proxy.port} 访问你的服务
 * 免费的服务设置了最大连接数200个,服务器代理服务开放的端口是[35000~36000],如果发现线路繁忙无法连接请联系我,提供单独的Token zhangyinhao1234@163.com
 
