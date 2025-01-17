@@ -47,7 +47,7 @@ Token Cons Is Gone : [连接已经被占满]
 * https://github.com/zhangyinhao1234/nat-cross/releases/tag/v1.0.0
 
 # 免费使用
-* 个人服务器2025年2月10号到期,到时候服务会停用
+* 个人服务器2025年2月10号到期,到时候服务会停用,仅供交流和学习使用,请勿用于商用或违法行为
 * 使用下载的客户端,修改 conf 中的配置文件,在本地启动 nat-cross-client.jar ;使用 124.222.52.154:{server.proxy.port} 访问你的服务
 * 免费的服务设置了最大连接数200个,服务器代理服务开放的端口是[30000~40000],如果发现线路繁忙无法连接请联系我,提供单独的Token zhangyinhao1234@163.com
 
