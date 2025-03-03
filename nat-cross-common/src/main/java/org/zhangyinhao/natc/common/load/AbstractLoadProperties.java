@@ -7,6 +7,8 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.net.URL;
+import java.security.CodeSource;
 import java.util.Properties;
 /**
  *    Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,15 +37,25 @@ public abstract class AbstractLoadProperties implements Load {
         readProperties();
         parse2ConfBean();
     }
+
     private void readProperties() {
-        File file = new File(".");
         try {
-            String path = file.getCanonicalPath() + "/" + fileName;
+            String path = getJarLocation() + "/" + fileName;
             InputStream inputStream = new BufferedInputStream(new FileInputStream(path));
             properties.load(inputStream);
         } catch (Exception e) {
             log.error("LoadProperties Error, Exit...", e);
         }
+    }
+
+
+    private String getJarLocation() {
+        String path = AbstractLoadProperties.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+        if (path.contains("jar")) {
+            path = path.substring(0, path.lastIndexOf("."));
+            return path.substring(0, path.lastIndexOf("/"));
+        }
+        return path.replace("/nat-cross-common/target/classes/", "");
     }
 
     public abstract void parse2ConfBean();
