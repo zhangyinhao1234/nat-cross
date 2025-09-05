@@ -1,6 +1,7 @@
 package org.zhangyinhao.natc.client;
 
 import org.zhangyinhao.natc.client.cache.ClientParams;
+import org.zhangyinhao.natc.client.load.LoadJsonProperties;
 import org.zhangyinhao.natc.client.load.LoadProperties;
 /**
  *    Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +18,12 @@ import org.zhangyinhao.natc.client.load.LoadProperties;
  */
 public class ClientStartUp {
     public static void main(String[] args) {
-        new LoadProperties().load();
+        LoadJsonProperties loadProperties = new LoadJsonProperties();
+        if (args.length > 0) {
+            loadProperties.load(args[0]);
+        } else {
+            loadProperties.load();
+        }
         for (ClientParams.Connect connect : ClientParams.connects) {
             new Thread() {
                 @Override

@@ -1,0 +1,12 @@
+[
+  {
+    "serverAddr": "itostudy.com",
+    "serverPort": 10060,
+    "serverToken": "123456",
+    "serverProxyPort": 35001,
+    "serverProxyProtocol": "tcp",
+    "localProxyAddr": "localhost",
+    "localProxyPort": 8080,
+    "remark": "备注一下链接信息"
+  }
+]

@@ -26,7 +26,7 @@ import java.util.Properties;
 @Slf4j
 public abstract class AbstractLoadProperties implements Load {
     protected Properties properties = new Properties();
-    private String fileName;
+    protected String fileName;
 
     public AbstractLoadProperties(String fileName) {
         this.fileName = fileName;
@@ -38,9 +38,23 @@ public abstract class AbstractLoadProperties implements Load {
         parse2ConfBean();
     }
 
-    private void readProperties() {
+    @Override
+    public void load(String confDir) {
+        if(confDir==null || confDir.trim().length()==0){
+            load();
+            return;
+        }
+        readProperties(confDir);
+        parse2ConfBean();
+    }
+
+    protected void readProperties() {
+        readProperties(getJarLocation());
+    }
+
+    protected void readProperties(String confDir) {
         try {
-            String path = getJarLocation() + "/" + fileName;
+            String path = confDir + File.separator + fileName;
             InputStream inputStream = new BufferedInputStream(new FileInputStream(path));
             properties.load(inputStream);
         } catch (Exception e) {
@@ -49,7 +63,7 @@ public abstract class AbstractLoadProperties implements Load {
     }
 
 
-    private String getJarLocation() {
+    protected String getJarLocation() {
         String path = AbstractLoadProperties.class.getProtectionDomain().getCodeSource().getLocation().getPath();
         if (path.contains("jar")) {
             path = path.substring(0, path.lastIndexOf("."));
