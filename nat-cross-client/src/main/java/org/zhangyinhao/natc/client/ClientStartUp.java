@@ -2,7 +2,9 @@ package org.zhangyinhao.natc.client;
 
 import org.zhangyinhao.natc.client.cache.ClientParams;
 import org.zhangyinhao.natc.client.load.LoadJsonProperties;
-import org.zhangyinhao.natc.client.load.LoadProperties;
+import org.zhangyinhao.natc.client.net.KeepConnection;
+import org.zhangyinhao.natc.client.net.NactClient;
+
 /**
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -24,13 +26,6 @@ public class ClientStartUp {
         } else {
             loadProperties.load();
         }
-        for (ClientParams.Connect connect : ClientParams.connects) {
-            new Thread() {
-                @Override
-                public void run() {
-                    new NactClient(connect).start();
-                }
-            }.start();
-        }
+        KeepConnection.start();
     }
 }

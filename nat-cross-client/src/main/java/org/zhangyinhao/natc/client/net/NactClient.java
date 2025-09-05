@@ -1,20 +1,12 @@
-package org.zhangyinhao.natc.client;
+package org.zhangyinhao.natc.client.net;
 
-import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.bytes.ByteArrayDecoder;
-import io.netty.handler.codec.bytes.ByteArrayEncoder;
-import io.netty.handler.logging.LoggingHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.zhangyinhao.natc.client.cache.ClientParams;
 import org.zhangyinhao.natc.client.handler.KeepaliveHandler;
 import org.zhangyinhao.natc.client.handler.NatcClientHandler;
 import org.zhangyinhao.natc.client.handler.NatcClientIdleCheckHandler;
-import org.zhangyinhao.natc.client.handler.NatcLocalProxyHandler;
-import org.zhangyinhao.natc.client.net.TcpConnection;
 import org.zhangyinhao.natc.common.codec.NatcMsgFrameDecoder;
 import org.zhangyinhao.natc.common.codec.NatcMsgFrameEncoder;
 import org.zhangyinhao.natc.common.codec.NatcMsgProtocolDecoder;
@@ -58,10 +50,10 @@ public class NactClient {
                             .addLast("clientHandler", new NatcClientHandler(connect));
                 }
             });
-            //log.info("Client Connect Server Success,ServerAddr : {}, ServerPort : {}", connect.getServerAddr(), connect.getServerPort());
+            KeepConnection.rmLoseConnect(connect);
+            log.info("NactClient Connect Server Success,ServerAddr : {}, ServerPort : {}", connect.getServerAddr(), connect.getServerPort());
         } catch (Exception e) {
             log.error("Client Connect Error", e);
         }
-
     }
 }

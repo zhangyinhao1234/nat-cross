@@ -11,6 +11,7 @@ import io.netty.handler.codec.bytes.ByteArrayEncoder;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import lombok.extern.slf4j.Slf4j;
 import org.zhangyinhao.natc.client.cache.ClientParams;
+import org.zhangyinhao.natc.client.net.KeepConnection;
 import org.zhangyinhao.natc.client.net.TcpConnection;
 import org.zhangyinhao.natc.common.protocol.NatcMsg;
 import org.zhangyinhao.natc.common.protocol.ProtocolEnums;
@@ -57,6 +58,7 @@ public class NatcClientHandler extends ChannelInboundHandlerAdapter {
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         channelGroup.close();
         log.info("ClientHandler channel inactive, close channelGroup");
+        KeepConnection.addLoseConnect(connect);
     }
 
     @Override
