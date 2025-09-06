@@ -143,6 +143,8 @@ public class NatcClientHandler extends ChannelInboundHandlerAdapter {
         if (handler != null) {
             handler.getCtx().close();
             channelHandlerMap.remove(channelId);
+            log.info("disconnect ,LocalProxyAddr:{},LocalProxyPort:{}, addLoseConnect ",connect.getLocalProxyAddr(),connect.getLocalProxyPort());
+            //KeepConnection.addLoseConnect(connect);
         }
     }
 
@@ -150,6 +152,7 @@ public class NatcClientHandler extends ChannelInboundHandlerAdapter {
     private void error(ChannelHandlerContext ctx,NatcMsg natcMsg) {
         log.error("Server Close Channel By : {}", natcMsg.getResponse().getRemark());
         ctx.close();
+        KeepConnection.addLoseConnect(connect);
     }
 
 

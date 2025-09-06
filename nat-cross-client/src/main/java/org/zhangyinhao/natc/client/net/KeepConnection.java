@@ -47,7 +47,7 @@ public class KeepConnection {
     static class KeepTask implements Runnable {
         @Override
         public void run() {
-            log.info("run KeepTask ......");
+            //log.info("run KeepTask ......");
             for (ClientParams.Connect connect : loseConnects) {
                 log.info("run KeepTask reconnect ....... LocalProxyAddr:{},LocalProxyPort:{}", connect.getLocalProxyAddr(), connect.getLocalProxyPort());
                 connect(connect);

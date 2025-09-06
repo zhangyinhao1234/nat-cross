@@ -51,7 +51,7 @@ public class NactClient {
                 }
             });
             KeepConnection.rmLoseConnect(connect);
-            log.info("NactClient Connect Server Success,ServerAddr : {}, ServerPort : {}", connect.getServerAddr(), connect.getServerPort());
+            //log.info("NactClient Connect Server Success,ServerAddr : {}, ServerPort : {}", connect.getServerAddr(), connect.getServerPort());
         } catch (Exception e) {
             log.error("Client Connect Error", e);
         }
