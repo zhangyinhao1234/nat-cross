@@ -12,6 +12,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 @Slf4j
 public class KeepConnection {
+    private static Object lock = new Object();
     private static Set<ClientParams.Connect> loseConnects = new HashSet<>();
     private static ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
@@ -28,29 +29,30 @@ public class KeepConnection {
     }
 
     public static void rmLoseConnect(ClientParams.Connect connect) {
-        synchronized (connect) {
+        synchronized (lock) {
             loseConnects.remove(connect);
         }
     }
 
     public static void addLoseConnect(ClientParams.Connect connect) {
-        synchronized (connect) {
+        synchronized (lock) {
+            log.info("addLoseConnect LocalProxyAddr:{},LocalProxyPort:{}", connect.getLocalProxyAddr(), connect.getLocalProxyPort());
             loseConnects.add(connect);
-        }
-        if (loseConnects.size() * 2 >= ClientParams.connects.size()) {
-            loseConnects.forEach(c -> {
-                connect(c);
-            });
         }
     }
 
     static class KeepTask implements Runnable {
         @Override
         public void run() {
-            //log.info("run KeepTask ......");
-            for (ClientParams.Connect connect : loseConnects) {
+            int runCnt = 0;
+            int loseConnectsSize = loseConnects.size();
+            while (loseConnects.iterator().hasNext()) {
+                ClientParams.Connect connect = loseConnects.iterator().next();
                 log.info("run KeepTask reconnect ....... LocalProxyAddr:{},LocalProxyPort:{}", connect.getLocalProxyAddr(), connect.getLocalProxyPort());
                 connect(connect);
+                runCnt++;
+                if (runCnt > loseConnectsSize)
+                    break;
             }
         }
     }
