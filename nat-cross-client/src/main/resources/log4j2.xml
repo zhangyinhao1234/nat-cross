@@ -10,13 +10,14 @@
                 <pattern>${ConsolePATTERN}</pattern>
             </PatternLayout>
         </console>
-        <RollingRandomAccessFile name="FileLog" fileName="${logPath}/info.log" filePattern="${logPath}/info-%d{yyyy-MM-dd-HH}.log">
+        <RollingRandomAccessFile name="FileLog" fileName="${logPath}/info.log" filePattern="${logPath}/info-%d{yyyy-MM-dd-HH}-%i.log">
             <PatternLayout>
                 <pattern>${PATTERN}</pattern>
             </PatternLayout>
             <DefaultRolloverStrategy max="10"/>
             <Policies>
-                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <TimeBasedTriggeringPolicy interval="2 hour" />
+                <SizeBasedTriggeringPolicy size="1024KB" />
             </Policies>
         </RollingRandomAccessFile>
     </appenders>

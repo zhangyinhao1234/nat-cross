@@ -14,4 +14,6 @@ package org.zhangyinhao.natc.common.load;
  */
 public interface Load {
     void load();
+
+    void load(String confDir);
 }
