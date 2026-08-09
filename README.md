@@ -1,3 +1,5 @@
+
+
 # nat-cross
 nat-cross是基于Netty实现的内网穿透工具,目前支持TCP和HTTP协议。
 
@@ -33,6 +35,7 @@ Server Start Success Port Is : 10060
 ```
 java -jar nat-cross-client.jar
 ```
+客户端配置请修改 [client.json](conf/client.json)，填写服务端地址、Token及本地映射信息。
 启动成功后,会看到如下输出: 然后使用 {server.addr}:{server.proxy.port} 访问你的服务
 ```
 Register Success, ServerProxyPort : 38080 
@@ -45,4 +48,3 @@ Token Cons Is Gone : [连接已经被占满]
 
 # 文件下载
 * https://github.com/zhangyinhao1234/nat-cross/releases/tag/v1.0.0
-
